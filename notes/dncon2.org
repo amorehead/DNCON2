@@ -51,4 +51,4 @@ project’s latest results.
 *** Data Collection
 *** Feature Generation
 *** Network Architecture
-**** TODO [#A] Implementing the Inception-ResNet V2 architecture in [[file:~/Repositories/DNCON2/scripts/libcnnpredict.py][DNCON2's network architecture file]] using [[https://github.com/keras-team/keras-applications/blob/master/keras_applications/inception_resnet_v2.py][the Keras team's own implementation]].
+**** NEXT [#A] Implementing the Inception-ResNet V2 architecture in [[file:~/Repositories/DNCON2/scripts/libcnnpredict.py][DNCON2's network architecture file]] using [[https://github.com/keras-team/keras-applications/blob/master/keras_applications/inception_resnet_v2.py][the Keras team's own implementation]].
