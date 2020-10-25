@@ -1,0 +1,62 @@
+# This is DNCON2/notes/dncon2.org
+
+#+title:  Protein contact prediction using deep learning
+#+author: Alex Morehead, Elham Soltanikazemi, and Raj Roy
+#+date: \today
+
+** Abstract
+In recent years, the task of predicting the structure of a protein from its
+sequence has been significantly improved by leveraging machine learning and
+particularly deep learning techniques. Notably, the use of deep neural networks
+to predict the distance between pairs of amino acid residues and also protein
+residue-residue contacts have demonstrated great promise in increasing the
+performance of protein structure prediction (PSP) methods. Therefore, it seems
+that the development of novel and robust methods to reliably predict
+contacts/distances between residues is necessary for further improvement of ab
+initio structure prediction. Here, we will also address this problem by building
+a deep network architecture to predict intra-chain protein residue-residue
+contact maps.
+
+** Goal
+1. Determine the effectiveness of residual network (ResNet) models in performing
+   protein contact prediction
+2. Investigate how coevolution-based features can be utilized to train a deep
+   convolutional neural network (ConvNet)
+
+** Model
+We will extend the work of DNCON2, an existing pipeline for predicting
+residue-residue contacts using a two-level deep convolutional neural network.
+
+** Dataset & Evaluation
+For the project, we are going to work with the DNCON2 dataset, which consists of
+1426 data points, and split the data in the ratio of 8:1:1 for training,
+validation, and testing data, respectively. For evaluating a protein of sequence
+length L, we will calculate the prediction accuracy on the Top-5, Top-10,
+Top-50, L/5, and L/2 prediction categories and compare them with the DNCON2
+project’s latest results.
+
+** Related Works
+1. DNCON2, 2018
+3. AlphaFold, 2018
+4. trRosetta, 2020
+2. DeepDist, 2020
+
+** References
+1. Wu, Tianqi, Zhiye Guo, Jie Hou, and Jianlin Cheng. "DeepDist: real-value
+inter-residue distance prediction with deep residual network." bioRxiv (2020).
+2. Adhikari, Badri, Jie Hou, and Jianlin Cheng. "DNCON2: improved protein
+contact prediction using two-level deep convolutional neural networks."
+Bioinformatics 34, no. 9 (2018): 1466-1472.
+3. Senior, A.W., Evans, R., Jumper, J. et al. Improved protein structure
+prediction using potentials from deep learning. Nature 577, 706–710 (2020).
+https://doi.org/10.1038/s41586-019-1923-7
+4. Yang J, Anishchenko I, Park H, Peng Z, Ovchinnikov S, Baker D. Improved
+protein structure prediction using predicted interresidue orientations. Proc
+Natl Acad Sci U S A. 2020 Jan 21;117(3):1496-1503. doi: 10.1073/pnas.1914677117.
+Epub 2020 Jan 2. PMID: 31896580; PMCID: PMC6983395
+
+** Tasks
+*** Data Collection
+*** Feature Generation
+*** Network Architecture
+**** TODO [#A] Implementing the Inception-ResNet V2 architecture in [[file:~/Repositories/DNCON2/scripts/libcnnpredict.py][DNCON2's network architecture file]] using [[https://github.com/keras-team/keras-applications/blob/master/keras_applications/inception_resnet_v2.py][the Keras team's own implementation]].
