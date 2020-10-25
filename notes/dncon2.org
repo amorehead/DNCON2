@@ -42,18 +42,10 @@ project’s latest results.
 2. DeepDist, 2020
 
 ** References
-1. Wu, Tianqi, Zhiye Guo, Jie Hou, and Jianlin Cheng. "DeepDist: real-value
-inter-residue distance prediction with deep residual network." bioRxiv (2020).
-2. Adhikari, Badri, Jie Hou, and Jianlin Cheng. "DNCON2: improved protein
-contact prediction using two-level deep convolutional neural networks."
-Bioinformatics 34, no. 9 (2018): 1466-1472.
-3. Senior, A.W., Evans, R., Jumper, J. et al. Improved protein structure
-prediction using potentials from deep learning. Nature 577, 706–710 (2020).
-https://doi.org/10.1038/s41586-019-1923-7
-4. Yang J, Anishchenko I, Park H, Peng Z, Ovchinnikov S, Baker D. Improved
-protein structure prediction using predicted interresidue orientations. Proc
-Natl Acad Sci U S A. 2020 Jan 21;117(3):1496-1503. doi: 10.1073/pnas.1914677117.
-Epub 2020 Jan 2. PMID: 31896580; PMCID: PMC6983395
+1. Wu, Tianqi, Zhiye Guo, Jie Hou, and Jianlin Cheng. "DeepDist: real-value inter-residue distance prediction with deep residual network." bioRxiv (2020).
+2. Adhikari, Badri, Jie Hou, and Jianlin Cheng. "DNCON2: improved protein contact prediction using two-level deep convolutional neural networks." Bioinformatics 34, no. 9 (2018): 1466-1472.
+3. Senior, A.W., Evans, R., Jumper, J. et al. Improved protein structure prediction using potentials from deep learning. Nature 577, 706–710 (2020). https://doi.org/10.1038/s41586-019-1923-7
+4. Yang J, Anishchenko I, Park H, Peng Z, Ovchinnikov S, Baker D. Improved protein structure prediction using predicted interresidue orientations. Proc Natl Acad Sci U S A. 2020 Jan 21;117(3):1496-1503. doi: 10.1073/pnas.1914677117. Epub 2020 Jan 2. PMID: 31896580; PMCID: PMC6983395
 
 ** Tasks
 *** Data Collection
