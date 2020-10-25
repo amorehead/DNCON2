@@ -1,18 +1,18 @@
 #!/usr/bin/python
 # Badri Adhikari, 6-15-2017
+# Alex Morehead, 10-25-2020
 # Subroutines for prediction
 
-from keras.models import Sequential
-from keras.layers import Activation, Flatten
-from keras.layers import Convolution2D
-from keras.layers.normalization import BatchNormalization
-from keras.optimizers import Nadam
-import numpy as np
 import math
 import os
 import sys
-import random
+
 import keras.backend as K
+import numpy as np
+from keras.layers import Activation, Flatten
+from keras.layers import Convolution2D
+from keras.layers.normalization import BatchNormalization
+from keras.models import Sequential
 
 epsilon = K.epsilon()
 
@@ -45,7 +45,7 @@ def read_model_arch(file_config):
 # Feature file that has 0D, 1D, and 2D features (L is the first feature)
 # Output size (a little >= L) to which all the features will be rolled up to as 2D features
 def getX(feature_file, l_max):
-    # calcualte the length of the protein (the first feature)
+    # calculate the length of the protein (the first feature)
     reject_list = []
     reject_list.append("# PSSM")
     reject_list.append("# AA composition")

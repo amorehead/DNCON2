@@ -1,23 +1,21 @@
 #!/usr/bin/python
 # Badri Adhikari, 5-21-2017
+# Alex Morehead, 10-25-2020
 # Make the prediction at stage2 with second-stage feature files
 
-import sys
-import os
-
 from libcnnpredict import *
- 
+
 dir_config = sys.argv[1]
-fileX      = sys.argv[2]
-fileRR     = sys.argv[3]
- 
+fileX = sys.argv[2]
+fileRR = sys.argv[3]
+
 print ''
 print('SCRIPT     : ' + sys.argv[0])
-print('dir_config : ' + dir_config )
-print('fileX      : ' + fileX      )
-print('fileRR     : ' + fileRR  )
+print('dir_config : ' + dir_config)
+print('fileX      : ' + fileX)
+print('fileRR     : ' + fileRR)
 print ''
- 
+
 weight_arch_dict = {}
 for i in range(1, 21):
 	print 'Reading weight file ' + dir_config + '/stage2-' + str(i) + '.hdf5 ..'

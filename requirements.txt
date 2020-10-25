@@ -1,0 +1,4 @@
+# DNCON2-related dependencies
+tensorflow==1.15
+keras==2.4.3
+numpy==1.16.6

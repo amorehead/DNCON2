@@ -1,28 +1,26 @@
 #!/usr/bin/python
 # Badri Adhikari, 5-21-2017
+# Alex Morehead, 10-25-2020
 # Predict using the five models in first stage and append to feature file
-
-import sys
-import os
 
 from libcnnpredict import *
 
-dir_config     = sys.argv[1]
-file_weights   = sys.argv[2]
-string_header  = sys.argv[3]
-fileX          = sys.argv[4]
-fileX_stage2   = sys.argv[5]
+dir_config = sys.argv[1]
+file_weights = sys.argv[2]
+string_header = sys.argv[3]
+fileX = sys.argv[4]
+fileX_stage2 = sys.argv[5]
 
-file_weights  = dir_config + '/' + file_weights
+file_weights = dir_config + '/' + file_weights
 model_arch = read_model_arch(dir_config + '/model-arch.config')
 
 print ''
-print('SCRIPT        : ' + sys.argv[0]   )
-print('dir_config    : ' + dir_config    )
-print('file_weights  : ' + file_weights  )
-print('string_header : ' + string_header )
-print('fileX         : ' + fileX         )
-print('fileX_stage2  : ' + fileX_stage2  )
+print('SCRIPT        : ' + sys.argv[0])
+print('dir_config    : ' + dir_config)
+print('file_weights  : ' + file_weights)
+print('string_header : ' + string_header)
+print('fileX         : ' + fileX)
+print('fileX_stage2  : ' + fileX_stage2)
 print ''
 
 # Need to make X slightly bigger than L x L by padding zeros
