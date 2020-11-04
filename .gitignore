@@ -139,3 +139,4 @@ cython_debug/
 
 # Local data
 /data
+inception-resnet-v2-model-config-n-weights/inception_resnet_v2_2016_08_30.ckpt
