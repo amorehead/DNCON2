@@ -9,10 +9,6 @@ import sys
 
 import keras.backend as K
 import numpy as np
-from keras.layers import Activation, Flatten
-from keras.layers import Convolution2D
-from keras.layers.normalization import BatchNormalization
-from keras.models import Sequential
 from keras_applications import get_submodules_from_kwargs
 from keras_applications.imagenet_utils import _obtain_input_shape
 
@@ -241,13 +237,13 @@ def inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
     return x
 
 
-def InceptionResNetV2(include_top=True,
-                      weights='imagenet',
-                      input_tensor=None,
-                      input_shape=None,
-                      pooling=None,
-                      classes=1000,
-                      **kwargs):
+def build_model_for_this_input_shape(include_top=True,
+                                     weights='imagenet',
+                                     input_tensor=None,
+                                     input_shape=None,
+                                     pooling=None,
+                                     classes=1000,
+                                     **kwargs):
     """Instantiates the Inception-ResNet v2 architecture.
     Optionally loads weights pre-trained on ImageNet.
     Note that the data format convention used by the model is
@@ -286,6 +282,7 @@ def InceptionResNetV2(include_top=True,
             or invalid input shape.
     """
     global backend, layers, models, keras_utils
+    # TODO: Investigate backend not being populated
     backend, layers, models, keras_utils = get_submodules_from_kwargs(kwargs)
 
     if not (weights in {'imagenet', None} or os.path.exists(weights)):
@@ -297,6 +294,35 @@ def InceptionResNetV2(include_top=True,
     if weights == 'imagenet' and include_top and classes != 1000:
         raise ValueError('If using `weights` as `"imagenet"` with `include_top`'
                          ' as true, `classes` should be 1000')
+
+    # model = Sequential()
+    # for layer in range(1, 1000):
+    #     if not model_arch.has_key("layer" + str(layer)):
+    #         break
+    #     parameters = model_arch["layer" + str(layer)]
+    #     cols = parameters.split()
+    #     num_kernels = int(cols[0])
+    #     filter_size = int(cols[1])
+    #     b_norm_flag = cols[2]
+    #     activ_funct = cols[3]
+    #     if layer == 1:
+    #         model.add(
+    #             Convolution2D(
+    #                 num_kernels,
+    #                 filter_size,
+    #                 filter_size,
+    #                 border_mode="same",
+    #                 input_shape=X[0, :, :, :].shape,
+    #             )
+    #         )
+    #     else:
+    #         model.add(
+    #             Convolution2D(num_kernels, filter_size, filter_size, border_mode="same")
+    #         )
+    #     if b_norm_flag == "1":
+    #         model.add(BatchNormalization())
+    #     model.add(Activation(activ_funct))
+    # model.add(Flatten())
 
     # Determine proper input shape
     input_shape = _obtain_input_shape(
@@ -431,73 +457,8 @@ def InceptionResNetV2(include_top=True,
     return model
 
 
-# def build_model_for_this_input_shape(model_arch, X):
-#     model = Sequential()
-#     for layer in range(1, 1000):
-#         if not model_arch.has_key("layer" + str(layer)):
-#             break
-#         parameters = model_arch["layer" + str(layer)]
-#         cols = parameters.split()
-#         num_kernels = int(cols[0])
-#         filter_size = int(cols[1])
-#         b_norm_flag = cols[2]
-#         activ_funct = cols[3]
-#         if layer == 1:
-#             model.add(
-#                 Convolution2D(
-#                     num_kernels,
-#                     filter_size,
-#                     filter_size,
-#                     border_mode="same",
-#                     input_shape=X[0, :, :, :].shape,
-#                 )
-#             )
-#         else:
-#             model.add(
-#                 Convolution2D(num_kernels, filter_size, filter_size, border_mode="same")
-#             )
-#         if b_norm_flag == "1":
-#             model.add(BatchNormalization())
-#         model.add(Activation(activ_funct))
-#     model.add(Flatten())
-#     return model
-
-
-def build_model_for_this_input_shape(model_arch, X):
-    model = Sequential()
-    for layer in range(1, 1000):
-        if not model_arch.has_key("layer" + str(layer)):
-            break
-        parameters = model_arch["layer" + str(layer)]
-        cols = parameters.split()
-        num_kernels = int(cols[0])
-        filter_size = int(cols[1])
-        b_norm_flag = cols[2]
-        activ_funct = cols[3]
-        if layer == 1:
-            model.add(
-                Convolution2D(
-                    num_kernels,
-                    filter_size,
-                    filter_size,
-                    border_mode="same",
-                    input_shape=X[0, :, :, :].shape,
-                )
-            )
-        else:
-            model.add(
-                Convolution2D(num_kernels, filter_size, filter_size, border_mode="same")
-            )
-        if b_norm_flag == "1":
-            model.add(BatchNormalization())
-        model.add(Activation(activ_funct))
-    model.add(Flatten())
-    return model
-
-
 def make_prediction(model_arch, file_weights, X):
-    model = build_model_for_this_input_shape(model_arch, X)
-    model.load_weights(file_weights)
+    model = build_model_for_this_input_shape(input_shape=X[0, :, :, :].shape, weights=file_weights)
     P = model.predict(X)
     return P
 
