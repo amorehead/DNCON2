@@ -138,5 +138,5 @@ dmypy.json
 cython_debug/
 
 # Local data
-/data
+/databases
 inception-resnet-v2-model-config-n-weights/inception_resnet_v2_2016_08_30.ckpt
