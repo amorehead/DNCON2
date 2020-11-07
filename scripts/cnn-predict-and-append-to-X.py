@@ -14,14 +14,14 @@ fileX_stage2 = sys.argv[5]
 file_weights = dir_config + '/' + file_weights
 model_arch = read_model_arch(dir_config + '/model-arch.config')
 
-print ''
+print ('')
 print('SCRIPT        : ' + sys.argv[0])
 print('dir_config    : ' + dir_config)
 print('file_weights  : ' + file_weights)
 print('string_header : ' + string_header)
 print('fileX         : ' + fileX)
 print('fileX_stage2  : ' + fileX_stage2)
-print ''
+print ('')
 
 # Need to make X slightly bigger than L x L by padding zeros
 # Building a model with L x L decreases performance
