@@ -12,16 +12,15 @@ fileX = sys.argv[4]
 fileX_stage2 = sys.argv[5]
 
 file_weights = dir_config + '/' + file_weights
-model_arch = read_model_arch(dir_config + '/model-arch.config')
 
-print ('')
+print('')
 print('SCRIPT        : ' + sys.argv[0])
 print('dir_config    : ' + dir_config)
 print('file_weights  : ' + file_weights)
 print('string_header : ' + string_header)
 print('fileX         : ' + fileX)
 print('fileX_stage2  : ' + fileX_stage2)
-print ('')
+print('')
 
 # Need to make X slightly bigger than L x L by padding zeros
 # Building a model with L x L decreases performance
@@ -40,7 +39,7 @@ X = np.zeros((1, LMAX, LMAX, F))
 X[0, :, :, :] = x
 
 # Predict at (L+10) x (L+10) and trim it back to L x L
-P = make_prediction(model_arch, file_weights, X)
+P = make_prediction(file_weights, X)
 PF = ((P[0].reshape(LMAX, LMAX))[0:L, 0:L]).flatten()
 
 # Append this prediction as an additional feature to the existing feature file

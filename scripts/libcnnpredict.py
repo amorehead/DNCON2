@@ -7,12 +7,12 @@ import math
 import os
 import sys
 
-import keras.backend as K
+import keras
 import numpy as np
 from keras_applications import get_submodules_from_kwargs
 from keras_applications.imagenet_utils import _obtain_input_shape
 
-epsilon = K.epsilon()
+epsilon = keras.backend.epsilon()
 
 BASE_WEIGHT_URL = ('https://github.com/fchollet/deep-learning-models/'
                    'releases/download/v0.7/')
@@ -20,31 +20,6 @@ backend = None
 layers = None
 models = None
 keras_utils = None
-
-
-# Model architectures / Layers information
-def read_model_arch(file_config):
-    if not os.path.isfile(file_config):
-        print ("Error! Could not find config file " + file_config)
-        sys.exit(1)
-    layers = {}
-    with open(file_config) as f:
-        for line in f:
-            if line.startswith("#"):
-                continue
-            if len(line) < 2:
-                continue
-            cols = line.strip().split()
-            if len(cols) != 5:
-                print ("Error! Config file " + file_config + " line " + line + "??")
-                sys.exit(1)
-            layers[cols[0]] = cols[1] + " " + cols[2] + " " + cols[3] + " " + cols[4]
-    print ("")
-    print ("Read model architecture:")
-    for k, v in sorted(layers.items()):
-        print (k + " : " + v)
-    print ("")
-    return layers
 
 
 # Feature file that has 0D, 1D, and 2D features (L is the first feature)
@@ -98,9 +73,9 @@ def getX(feature_file, l_max):
                 feature2D = np.asarray(this_line).reshape(L, L)
                 Data.append(feature2D)
             else:
-                print (line)
-                print ("Error!! Unknown length of feature in !!" + feature_file)
-                print (
+                print(line)
+                print("Error!! Unknown length of feature in !!" + feature_file)
+                print(
                     "Expected length 0, "
                     + str(L)
                     + ", or "
@@ -282,7 +257,6 @@ def build_model_for_this_input_shape(include_top=True,
             or invalid input shape.
     """
     global backend, layers, models, keras_utils
-    # TODO: Investigate backend not being populated
     backend, layers, models, keras_utils = get_submodules_from_kwargs(kwargs)
 
     if not (weights in {'imagenet', None} or os.path.exists(weights)):
@@ -457,14 +431,16 @@ def build_model_for_this_input_shape(include_top=True,
     return model
 
 
-def make_prediction(model_arch, file_weights, X):
-    model = build_model_for_this_input_shape(input_shape=X[0, :, :, :].shape, weights=file_weights)
+def make_prediction(file_weights, X):
+    model = build_model_for_this_input_shape(weights=file_weights, input_shape=X[0, :, :, :].shape,
+                                             backend=keras.backend, layers=keras.layers, models=keras.models,
+                                             utils=keras.utils)
     P = model.predict(X)
     return P
 
 
 def print_feature_summary(X):
-    print ("FeatID         Avg        Med        Max        Sum        Avg[30]    Med[30]    Max[30]    Sum[30]")
+    print("FeatID         Avg        Med        Max        Sum        Avg[30]    Med[30]    Max[30]    Sum[30]")
     for ii in range(0, len(X[0, 0, 0, :])):
         (m, s, a, d) = (
             X[0, :, :, ii].flatten().max(),
@@ -478,7 +454,7 @@ def print_feature_summary(X):
             X[0, 30, :, ii].flatten().mean(),
             np.median(X[0, 30, :, ii].flatten()),
         )
-        print (" Feat%2s %10.4f %10.4f %10.4f %10.1f     %10.4f %10.4f %10.4f %10.4f" % (
+        print(" Feat%2s %10.4f %10.4f %10.4f %10.1f     %10.4f %10.4f %10.4f %10.4f" % (
             ii,
             a,
             d,
@@ -508,7 +484,7 @@ def get_x_from_this_file(feature_file):
 
 
 def prediction2rr(P, fileRR):
-    print ("Writing RR file " + fileRR)
+    print("Writing RR file " + fileRR)
     L = int(math.sqrt(len(P)))
     PM = P.reshape(L, L)
     rr = open(fileRR, "w")
@@ -525,9 +501,9 @@ def make_ensemble_prediction(weight_arch_dict, X):
     L = len(X[0, :, 0, 0])
     P = np.zeros((N, int(L * L)))
     for weight in weight_arch_dict.keys():
-        print ("")
-        print ("Running prediction using " + weight + " and " + weight_arch_dict[weight])
-        P0 = make_prediction(read_model_arch(weight_arch_dict[weight]), weight, X)
+        print("")
+        print("Running prediction using " + weight + " and " + weight_arch_dict[weight])
+        P0 = make_prediction(weight_arch_dict[weight], weight, X)
         for i in range(0, len(P0[:, 0])):
             P[i] = P[i] + P0[i]
     for i in range(0, len(P[:, 0])):
