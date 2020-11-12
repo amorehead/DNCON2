@@ -217,7 +217,7 @@ def build_model_for_this_input_shape(include_top=True,
                                      input_tensor=None,
                                      input_shape=None,
                                      pooling=None,
-                                     classes=1000,
+                                     classes=2,
                                      **kwargs):
     """Instantiates the Inception-ResNet v2 architecture.
     Optionally loads weights pre-trained on ImageNet.
@@ -269,8 +269,10 @@ def build_model_for_this_input_shape(include_top=True,
         raise ValueError('If using `weights` as `"imagenet"` with `include_top`'
                          ' as true, `classes` should be 1000')
 
-    # model = Sequential()
-    # for layer in range(1, 1000):
+    # Old DNCON2 Architecture For Reference #
+    # layer = 1
+    # model = layers.Sequential()
+    # while True:
     #     if not model_arch.has_key("layer" + str(layer)):
     #         break
     #     parameters = model_arch["layer" + str(layer)]
@@ -281,27 +283,28 @@ def build_model_for_this_input_shape(include_top=True,
     #     activ_funct = cols[3]
     #     if layer == 1:
     #         model.add(
-    #             Convolution2D(
+    #             layers.Conv2D(
     #                 num_kernels,
     #                 filter_size,
     #                 filter_size,
     #                 border_mode="same",
-    #                 input_shape=X[0, :, :, :].shape,
+    #                 input_shape=input_shape,
     #             )
     #         )
     #     else:
     #         model.add(
-    #             Convolution2D(num_kernels, filter_size, filter_size, border_mode="same")
+    #             layers.Conv2D(num_kernels, filter_size, filter_size, border_mode="same")
     #         )
     #     if b_norm_flag == "1":
-    #         model.add(BatchNormalization())
-    #     model.add(Activation(activ_funct))
-    # model.add(Flatten())
+    #         model.add(layers.BatchNormalization())
+    #     model.add(layers.Activation(activ_funct))
+    #     layer += 1
+    # model.add(layers.Flatten())
 
     # Determine proper input shape
     input_shape = _obtain_input_shape(
         input_shape,
-        default_size=299,
+        default_size=75,
         min_size=75,
         data_format=backend.image_data_format(),
         require_flatten=include_top,

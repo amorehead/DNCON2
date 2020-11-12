@@ -38,7 +38,7 @@ else
 	for dist_thres in '60' '75' '80' '85' '10' ; do
 		echo ""
 		echo "Running prediction using coevo-${dist_thres}A .. "
-		python $dir_scripts/cnn-predict-and-append-to-X.py $dir_config "inception_resnet_v2_2016_08_30.ckpt" "${dist_thres}A" $fileX $file_stg2_tmp
+		python $dir_scripts/cnn-predict-and-append-to-X.py $dir_config "" "${dist_thres}A" $fileX $file_stg2_tmp
 	done 
 fi
 

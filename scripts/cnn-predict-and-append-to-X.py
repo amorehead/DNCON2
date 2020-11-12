@@ -11,12 +11,12 @@ string_header = sys.argv[3]
 fileX = sys.argv[4]
 fileX_stage2 = sys.argv[5]
 
-file_weights = dir_config + '/' + file_weights
+file_weights = dir_config + '/' + file_weights if file_weights else None
 
 print('')
 print('SCRIPT        : ' + sys.argv[0])
 print('dir_config    : ' + dir_config)
-print('file_weights  : ' + file_weights)
+print('file_weights  : ' + file_weights if file_weights else "")
 print('string_header : ' + string_header)
 print('fileX         : ' + fileX)
 print('fileX_stage2  : ' + fileX_stage2)
@@ -30,15 +30,19 @@ with open(fileX) as f:
 		if line.startswith('#'):
 			continue
 		L = line.strip().split()
+		l_0 = L[0]
+		exp = math.exp(float(L[0]))
 		L = int(round(math.exp(float(L[0]))))
 		break
-LMAX = L + 10
+
+L_EXT = 35
+LMAX = L + L_EXT
 x = getX(fileX, LMAX)
 F = len(x[0, 0, :])
 X = np.zeros((1, LMAX, LMAX, F))
 X[0, :, :, :] = x
 
-# Predict at (L+10) x (L+10) and trim it back to L x L
+# Predict at (L+L_EXT) x (L+L_EXT) and trim it back to L x L
 P = make_prediction(file_weights, X)
 PF = ((P[0].reshape(LMAX, LMAX))[0:L, 0:L]).flatten()
 
