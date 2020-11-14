@@ -12,6 +12,7 @@ fileX = sys.argv[4]
 fileX_stage2 = sys.argv[5]
 
 file_weights = dir_config + '/' + file_weights if file_weights else None
+model_arch = read_model_arch(dir_config + '/model-arch.config')
 
 print('')
 print('SCRIPT        : ' + sys.argv[0])
@@ -35,7 +36,7 @@ with open(fileX) as f:
 		L = int(round(math.exp(float(L[0]))))
 		break
 
-L_EXT = 35
+L_EXT = 10
 LMAX = L + L_EXT
 x = getX(fileX, LMAX)
 F = len(x[0, 0, :])
@@ -43,7 +44,7 @@ X = np.zeros((1, LMAX, LMAX, F))
 X[0, :, :, :] = x
 
 # Predict at (L+L_EXT) x (L+L_EXT) and trim it back to L x L
-P = make_prediction(file_weights, X)
+P = make_prediction(model_arch, file_weights, X, L)
 PF = ((P[0].reshape(LMAX, LMAX))[0:L, 0:L]).flatten()
 
 # Append this prediction as an additional feature to the existing feature file

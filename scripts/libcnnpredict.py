@@ -7,19 +7,47 @@ import math
 import os
 import sys
 
-import keras
 import numpy as np
 from keras_applications import get_submodules_from_kwargs
 from keras_applications.imagenet_utils import _obtain_input_shape
+from tensorflow import keras
+from tensorflow.keras import activations
+from tensorflow.keras import layers
+from tensorflow.keras import regularizers
 
 epsilon = keras.backend.epsilon()
 
 BASE_WEIGHT_URL = ('https://github.com/fchollet/deep-learning-models/'
                    'releases/download/v0.7/')
 backend = None
-layers = None
+# layers = None
 models = None
 keras_utils = None
+
+
+# Model architectures / Layers information
+def read_model_arch(file_config):
+    if not os.path.isfile(file_config):
+        print('Error! Could not find config file ' + file_config)
+        sys.exit(1)
+    lyrs = {}
+    with open(file_config) as f:
+        for line in f:
+            if line.startswith('#'):
+                continue
+            if len(line) < 2:
+                continue
+            cols = line.strip().split()
+            if len(cols) != 5:
+                print('Error! Config file ' + file_config + ' line ' + line + '??')
+                sys.exit(1)
+            lyrs[cols[0]] = cols[1] + ' ' + cols[2] + ' ' + cols[3] + ' ' + cols[4]
+    print('')
+    print('Read model architecture:')
+    for k, v in sorted(lyrs.items()):
+        print(k + ' : ' + v)
+    print('')
+    return lyrs
 
 
 # Feature file that has 0D, 1D, and 2D features (L is the first feature)
@@ -89,6 +117,76 @@ def getX(feature_file, l_max):
     for i in range(0, F):
         X[0:L, 0:L, i] = Data[i]
     return X
+
+
+def res_identity(x, filters):
+    """
+    ResNet block where dimensions do not change.
+    The skip connection is just a simple identity connection.
+    We will have 3 blocks, and then input will be added.
+    """
+
+    x_skip = x  # Will be used for addition with the residual block
+    f1, f2 = filters
+
+    # First block
+    x = layers.Conv2D(f1, kernel_size=(1, 1), strides=(1, 1), padding='valid',
+                      kernel_regularizer=regularizers.l2(0.001))(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation(activations.relu)(x)
+
+    # Second block # bottleneck (but size kept same with padding)
+    x = layers.Conv2D(f1, kernel_size=(3, 3), strides=(1, 1), padding='same',
+                      kernel_regularizer=regularizers.l2(0.001))(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation(activations.relu)(x)
+
+    # Third block activation used after adding the input
+    x = layers.Conv2D(f2, kernel_size=(1, 1), strides=(1, 1), padding='valid',
+                      kernel_regularizer=regularizers.l2(0.001))(x)
+    x = layers.BatchNormalization()(x)
+    # x = Activation(activations.relu)(x)
+
+    # Add the input
+    x = layers.Add()([x, x_skip])
+    x = layers.Activation(activations.relu)(x)
+
+    return x
+
+
+def res_conv(x, s, filters):
+    """Here, the input size changes"""
+    x_skip = x
+    f1, f2 = filters
+
+    # First block
+    x = layers.Conv2D(f1, kernel_size=(1, 1), strides=(s, s), padding='valid',
+                      kernel_regularizer=regularizers.l2(0.001))(x)
+    # When s = 2 then it is like downsizing the feature map
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation(activations.relu)(x)
+
+    # Second block
+    x = layers.Conv2D(f1, kernel_size=(3, 3), strides=(1, 1), padding='same',
+                      kernel_regularizer=regularizers.l2(0.001))(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation(activations.relu)(x)
+
+    # Third block
+    x = layers.Conv2D(f2, kernel_size=(1, 1), strides=(1, 1), padding='valid',
+                      kernel_regularizer=regularizers.l2(0.001))(x)
+    x = layers.BatchNormalization()(x)
+
+    # Shortcut
+    x_skip = layers.Conv2D(f2, kernel_size=(1, 1), strides=(s, s), padding='valid',
+                           kernel_regularizer=regularizers.l2(0.001))(x_skip)
+    x_skip = layers.BatchNormalization()(x_skip)
+
+    # Add
+    x = layers.Add()([x, x_skip])
+    x = layers.Activation(activations.relu)(x)
+
+    return x
 
 
 def conv2d_bn(x,
@@ -212,13 +310,95 @@ def inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
     return x
 
 
-def build_model_for_this_input_shape(include_top=True,
-                                     weights='imagenet',
-                                     input_tensor=None,
-                                     input_shape=None,
-                                     pooling=None,
-                                     classes=2,
-                                     **kwargs):
+def build_orig_model_for_this_input_shape(model_arch, input_shape=None):
+    """Old DNCON2 Architecture"""
+    layer = 1
+    model = keras.Sequential()
+    while True:
+        if not ("layer" + str(layer)) in model_arch:
+            break
+        parameters = model_arch["layer" + str(layer)]
+        cols = parameters.split()
+        num_kernels = int(cols[0])
+        filter_size = int(cols[1])
+        b_norm_flag = cols[2]
+        activ_funct = cols[3]
+
+        if layer == 1:
+            model.add(
+                layers.Conv2D(filters=num_kernels,
+                              kernel_size=filter_size,
+                              padding="same",
+                              input_shape=input_shape))
+        else:
+            model.add(
+                layers.Conv2D(filters=num_kernels,
+                              kernel_size=filter_size,
+                              padding="same",
+                              input_shape=input_shape))
+        if b_norm_flag == "1":
+            model.add(layers.BatchNormalization())
+        model.add(layers.Activation(activ_funct))
+        layer += 1
+    model.add(layers.Flatten())
+
+    return model
+
+
+def build_resnet_model_for_this_input_shape(input_shape, num_of_classes):
+    input_layer = layers.Input(shape=input_shape)
+    x = layers.ZeroPadding2D(padding=(3, 3))(input_layer)
+
+    # 1st stage
+    # Here, we perform max pooling
+    x = layers.Conv2D(64, kernel_size=(7, 7), strides=(2, 2))(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation(activations.relu)(x)
+    x = layers.MaxPooling2D((3, 3), strides=(2, 2))(x)
+
+    # 2nd stage
+    # From here on, only convolution block and identity blocks, no pooling
+    x = res_conv(x, s=1, filters=(64, 256))
+    x = res_identity(x, filters=(64, 256))
+    x = res_identity(x, filters=(64, 256))
+
+    # 3rd stage
+    x = res_conv(x, s=2, filters=(128, 512))
+    x = res_identity(x, filters=(128, 512))
+    x = res_identity(x, filters=(128, 512))
+    x = res_identity(x, filters=(128, 512))
+
+    # 4th stage
+    x = res_conv(x, s=2, filters=(256, 1024))
+    x = res_identity(x, filters=(256, 1024))
+    x = res_identity(x, filters=(256, 1024))
+    x = res_identity(x, filters=(256, 1024))
+    x = res_identity(x, filters=(256, 1024))
+    x = res_identity(x, filters=(256, 1024))
+
+    # 5th stage
+    x = res_conv(x, s=2, filters=(512, 2048))
+    x = res_identity(x, filters=(512, 2048))
+    x = res_identity(x, filters=(512, 2048))
+
+    # End with average pooling and a dense connection
+    x = layers.AveragePooling2D((2, 2), padding='same')(x)
+    x = layers.Flatten()(x)
+    x = layers.Dense(num_of_classes, activation='softmax', kernel_initializer='he_normal')(x)  # Multi-class
+
+    # Define the model
+    model = keras.models.Model(inputs=input_layer, outputs=x, name='Resnet50')
+
+    return model
+
+
+def build_inception_resnet_v2_model_for_this_input_shape(include_top=True,
+                                                         weights='imagenet',
+                                                         input_tensor=None,
+                                                         input_shape=None,
+                                                         pooling=None,
+                                                         classes=2,
+                                                         **kwargs):
     """Instantiates the Inception-ResNet v2 architecture.
     Optionally loads weights pre-trained on ImageNet.
     Note that the data format convention used by the model is
@@ -256,8 +436,9 @@ def build_model_for_this_input_shape(include_top=True,
         ValueError: in case of invalid argument for `weights`,
             or invalid input shape.
     """
-    global backend, layers, models, keras_utils
-    backend, layers, models, keras_utils = get_submodules_from_kwargs(kwargs)
+    # New DNCON2 Inception-Resnet-V2 Architecture #
+    global backend, models, keras_utils
+    backend, lyrs, models, keras_utils = get_submodules_from_kwargs(kwargs)
 
     if not (weights in {'imagenet', None} or os.path.exists(weights)):
         raise ValueError('The `weights` argument should be either '
@@ -269,38 +450,7 @@ def build_model_for_this_input_shape(include_top=True,
         raise ValueError('If using `weights` as `"imagenet"` with `include_top`'
                          ' as true, `classes` should be 1000')
 
-    # Old DNCON2 Architecture For Reference #
-    # layer = 1
-    # model = layers.Sequential()
-    # while True:
-    #     if not model_arch.has_key("layer" + str(layer)):
-    #         break
-    #     parameters = model_arch["layer" + str(layer)]
-    #     cols = parameters.split()
-    #     num_kernels = int(cols[0])
-    #     filter_size = int(cols[1])
-    #     b_norm_flag = cols[2]
-    #     activ_funct = cols[3]
-    #     if layer == 1:
-    #         model.add(
-    #             layers.Conv2D(
-    #                 num_kernels,
-    #                 filter_size,
-    #                 filter_size,
-    #                 border_mode="same",
-    #                 input_shape=input_shape,
-    #             )
-    #         )
-    #     else:
-    #         model.add(
-    #             layers.Conv2D(num_kernels, filter_size, filter_size, border_mode="same")
-    #         )
-    #     if b_norm_flag == "1":
-    #         model.add(layers.BatchNormalization())
-    #     model.add(layers.Activation(activ_funct))
-    #     layer += 1
-    # model.add(layers.Flatten())
-
+    # New DNCON2 Inception-Resnet-V2 Architecture (2) #
     # Determine proper input shape
     input_shape = _obtain_input_shape(
         input_shape,
@@ -434,10 +584,14 @@ def build_model_for_this_input_shape(include_top=True,
     return model
 
 
-def make_prediction(file_weights, X):
-    model = build_model_for_this_input_shape(weights=file_weights, input_shape=X[0, :, :, :].shape,
-                                             backend=keras.backend, layers=keras.layers, models=keras.models,
-                                             utils=keras.utils)
+def make_prediction(model_arch, file_weights, X, L):
+    # model = build_orig_model_for_this_input_shape(model_arch, input_shape=X[0, :, :, :].shape)
+    model = build_resnet_model_for_this_input_shape(input_shape=X[0, :, :, :].shape, num_of_classes=L ** 2)
+    # model = build_inception_resnet_v2_model_for_this_input_shape(weights=file_weights, input_shape=X[0, :, :, :].shape,
+    #                                                              backend=keras.backend, layers=keras.layers,
+    #                                                              models=keras.models,
+    #                                                              utils=keras.utils)
+    model.load_weights(file_weights)
     P = model.predict(X)
     return P
 
