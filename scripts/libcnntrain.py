@@ -604,7 +604,7 @@ def train_model(model_arch, file_weights, X, LMAX):
     X_test = X
     y_test = X
     config = {'epochs': 100}
-    model.fit(X_train, y_train, validationData=(X_test, y_test), epochs=config['epochs'], callbacks=[WandbCallback()])
+    model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=config['epochs'], callbacks=[WandbCallback()])
 
     # Save model to wandb
     model.save(os.path.join(wandb.run.dir, "model.h5"))
