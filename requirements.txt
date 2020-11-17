@@ -2,3 +2,4 @@
 tensorflow==2.3.1
 keras==2.4.3
 Keras-Applications==1.0.8
+wandb==0.10.10

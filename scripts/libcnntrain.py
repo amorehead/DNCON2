@@ -8,12 +8,17 @@ import os
 import sys
 
 import numpy as np
+import wandb
 from keras_applications import get_submodules_from_kwargs
 from keras_applications.imagenet_utils import _obtain_input_shape
 from tensorflow import keras
 from tensorflow.keras import activations
 from tensorflow.keras import layers
 from tensorflow.keras import regularizers
+from wandb.keras import WandbCallback
+
+# Init wandb
+wandb.init(project="dncon2")
 
 epsilon = keras.backend.epsilon()
 
@@ -584,7 +589,7 @@ def build_inception_resnet_v2_model_for_this_input_shape(include_top=True,
     return model
 
 
-def make_prediction(model_arch, file_weights, X, LMAX):
+def train_model(model_arch, file_weights, X, LMAX):
     # model = build_orig_model_for_this_input_shape(model_arch, input_shape=X[0, :, :, :].shape)
     model = build_resnet_model_for_this_input_shape(input_shape=X[0, :, :, :].shape, num_of_classes=LMAX ** 2)
     # model = build_inception_resnet_v2_model_for_this_input_shape(weights=file_weights, input_shape=X[0, :, :, :].shape,
@@ -592,8 +597,17 @@ def make_prediction(model_arch, file_weights, X, LMAX):
     #                                                              models=keras.models,
     #                                                              utils=keras.utils)
     # model.load_weights(file_weights)
-    P = model.predict(X)
-    return P
+
+    # Log metrics with wandb
+    X_train = X
+    y_train = X
+    X_test = X
+    y_test = X
+    config = {'epochs': 100}
+    model.fit(X_train, y_train, validationData=(X_test, y_test), epochs=config['epochs'], callbacks=[WandbCallback()])
+
+    # Save model to wandb
+    model.save(os.path.join(wandb.run.dir, "model.h5"))
 
 
 def print_feature_summary(X):
@@ -651,18 +665,3 @@ def prediction2rr(P, fileRR):
                 continue
             rr.write("%i %i 0 8 %.5f\n" % (i + 1, j + 1, PM[i][j]))
     rr.close()
-
-
-def make_ensemble_prediction(weight_arch_dict, X):
-    N = len(X[:, 0, 0, 0])
-    L = len(X[0, :, 0, 0])
-    P = np.zeros((N, int(L * L)))
-    for weight in weight_arch_dict.keys():
-        print("")
-        print("Running prediction using " + weight + " and " + weight_arch_dict[weight])
-        P0 = make_prediction(weight_arch_dict[weight], weight, X)
-        for i in range(0, len(P0[:, 0])):
-            P[i] = P[i] + P0[i]
-    for i in range(0, len(P[:, 0])):
-        P[i] = P[i] / len(weight_arch_dict)
-    return P

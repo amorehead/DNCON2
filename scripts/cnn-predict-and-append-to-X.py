@@ -44,7 +44,7 @@ X = np.zeros((1, LMAX, LMAX, F))
 X[0, :, :, :] = x
 
 # Predict at (L+L_EXT) x (L+L_EXT) and trim it back to L x L
-P = make_prediction(model_arch, file_weights, X, L)
+P = make_prediction(model_arch, file_weights, X, LMAX)
 PF = ((P[0].reshape(LMAX, LMAX))[0:L, 0:L]).flatten()
 
 # Append this prediction as an additional feature to the existing feature file
