@@ -609,7 +609,7 @@ def prepare_data(feature_folder, label_folder):
 
 def extract_features(fileX):
     L = 0
-    with open(fileX) as f:
+    with open(fileX, 'r') as f:
         for line in f:
             if line.startswith('#'):
                 continue
