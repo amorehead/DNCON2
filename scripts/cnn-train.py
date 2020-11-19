@@ -39,6 +39,6 @@ with open(fileX) as f:
 
 L_EXT = 10
 LMAX = L + L_EXT
-num_of_inputs_to_use = 50
+num_of_inputs_to_use = 10
 
 train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use)

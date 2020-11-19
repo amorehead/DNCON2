@@ -648,18 +648,18 @@ def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
 
     # Determine if the data set has already been cached
     data_set_already_compiled = \
-        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/X_train.npy') and \
-        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/X_val.npy') and \
-        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/X_test.npy') and \
+        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/y_train.npy') and \
+        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/y_val.npy') and \
+        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/y_test.npy') and \
         os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/y_train.npy') and \
         os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/y_val.npy') and \
         os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/y_test.npy')
 
     # Load cached data set into memory (if applicable)
     if data_set_already_compiled:
-        X_train = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/X_train.npy')
-        X_val = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/X_val.npy')
-        X_test = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/X_test.npy')
+        X_train = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/y_train.npy')
+        X_val = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/y_val.npy')
+        X_test = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/y_test.npy')
         y_train = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/y_train.npy')
         y_val = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/y_val.npy')
         y_test = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/y_test.npy')
@@ -673,7 +673,7 @@ def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
 
         # Restructure features and labels
         features = np.array(generated_features)
-        contacts = np.reshape(np.array(generated_contacts), (50, 250000))
+        contacts = np.reshape(generated_contacts, (num_of_inputs_to_use, 250000))
 
         # Construct a 60-20-20 (%) training-validation-testing data split
         X_train, X_test, y_train, y_test = train_test_split(features, contacts, test_size=0.2, random_state=1)
@@ -691,7 +691,7 @@ def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
         np.save(base_cached_data_dir + '/databases/DNCON2/cached_features/y_test', y_test)
 
     # Build model architecture
-    input_shape = X_train[0][0, :, :, :].shape
+    input_shape = X_train[0].shape
 
     # Original DNCON2 architecture #
     # model = build_orig_model_for_this_input_shape(model_arch, input_shape=input_shape)
