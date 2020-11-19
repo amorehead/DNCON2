@@ -11,6 +11,7 @@ import numpy as np
 import wandb
 from keras_applications import get_submodules_from_kwargs
 from keras_applications.imagenet_utils import _obtain_input_shape
+from sklearn.model_selection import train_test_split
 from tensorflow import keras
 from tensorflow.keras import activations
 from tensorflow.keras import layers
@@ -589,25 +590,135 @@ def build_inception_resnet_v2_model_for_this_input_shape(include_top=True,
     return model
 
 
-def train_model(model_arch, file_weights, X, LMAX):
-    # model = build_orig_model_for_this_input_shape(model_arch, input_shape=X[0, :, :, :].shape)
-    model = build_resnet_model_for_this_input_shape(input_shape=X[0, :, :, :].shape, num_of_classes=LMAX ** 2)
-    # model = build_inception_resnet_v2_model_for_this_input_shape(weights=file_weights, input_shape=X[0, :, :, :].shape,
+def prepare_data(feature_folder, label_folder):
+    import glob
+    import os
+    features = glob.glob(feature_folder + '/' + '*.txt')
+    feature_files = []
+    contact_files = []
+    for feature in features:
+        base = os.path.basename(feature)
+        target = os.path.splitext(base)[0]
+
+        if os.path.isfile(label_folder + '/' + target[2:] + '.dist'):
+            feature_files.append(feature)
+            contact_files.append(label_folder + '/' + target[2:] + '.dist')
+
+    return feature_files, contact_files
+
+
+def extract_features(fileX):
+    L = 0
+    with open(fileX) as f:
+        for line in f:
+            if line.startswith('#'):
+                continue
+            L = line.strip().split()
+            L = int(round(math.exp(float(L[0]))))
+            break
+    LMAX = 500
+    x = getX(fileX, LMAX)
+    F = len(x[0, 0, :])
+    X_data = np.zeros((1, LMAX, LMAX, F))
+    X_data[0, :, :, :] = x
+    return X_data
+
+
+def extract_contact(file_distance):
+    distance = np.loadtxt(file_distance)
+    contact = np.zeros((500, 500), dtype=int)
+    for i in range(distance.shape[0]):
+        if distance[i, 2] > 8:
+            contact[int(distance[i, 0]), int(distance[i, 1])] = 0
+        else:
+            contact[int(distance[i, 0]), int(distance[i, 1])] = 1
+            contact[int(distance[i, 1]), int(distance[i, 0])] = 1
+    return contact
+
+
+def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
+    generated_features = []
+    generated_contacts = []
+    base_cached_data_dir = os.getcwd()
+    X_train, X_val, X_test, y_train, y_val, y_test = \
+        np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+
+    # Manually modify base_cached_data_dir if running script from the scripts directory
+    base_cached_data_dir = base_cached_data_dir[:-8] if base_cached_data_dir[-7:] == 'scripts' else base_cached_data_dir
+
+    # Determine if the data set has already been cached
+    data_set_already_compiled = \
+        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/X_train.npy') and \
+        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/X_val.npy') and \
+        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/X_test.npy') and \
+        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/y_train.npy') and \
+        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/y_val.npy') and \
+        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/y_test.npy')
+
+    # Load cached data set into memory (if applicable)
+    if data_set_already_compiled:
+        X_train = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/X_train.npy')
+        X_val = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/X_val.npy')
+        X_test = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/X_test.npy')
+        y_train = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/y_train.npy')
+        y_val = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/y_val.npy')
+        y_test = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/y_test.npy')
+
+    # Extracting features and labels from .txt file data set
+    if not data_set_already_compiled:
+        feature_files, contact_files = prepare_data('../databases/DNCON2/features', '../databases/DNCON2/labels')
+        for i in range(num_of_inputs_to_use):
+            generated_features.append(extract_features(feature_files[i])[0, :, :, :])
+            generated_contacts.append(extract_contact(contact_files[i]))
+
+        # Restructure features and labels
+        features = np.array(generated_features)
+        contacts = np.reshape(np.array(generated_contacts), (50, 250000))
+
+        # Construct a 60-20-20 (%) training-validation-testing data split
+        X_train, X_test, y_train, y_test = train_test_split(features, contacts, test_size=0.2, random_state=1)
+        X_train, X_val, y_train, y_val = train_test_split(
+            X_train, y_train, test_size=0.25, random_state=1  # 0.25 x 0.8 = 0.2
+        )
+
+    # Cache training-validation-testing data partitions
+    if not data_set_already_compiled:
+        np.save(base_cached_data_dir + '/databases/DNCON2/cached_features/X_train', X_train)
+        np.save(base_cached_data_dir + '/databases/DNCON2/cached_features/X_val', X_val)
+        np.save(base_cached_data_dir + '/databases/DNCON2/cached_features/X_test', X_test)
+        np.save(base_cached_data_dir + '/databases/DNCON2/cached_features/y_train', y_train)
+        np.save(base_cached_data_dir + '/databases/DNCON2/cached_features/y_val', y_val)
+        np.save(base_cached_data_dir + '/databases/DNCON2/cached_features/y_test', y_test)
+
+    # Build model architecture
+    input_shape = X_train[0][0, :, :, :].shape
+
+    # Original DNCON2 architecture #
+    # model = build_orig_model_for_this_input_shape(model_arch, input_shape=input_shape)
+    # Baseline Resnet architecture #
+    model = build_resnet_model_for_this_input_shape(input_shape=input_shape,
+                                                    num_of_classes=LMAX ** 2)
+    # Inception-Resnet-V2 architecture #
+    # model = build_inception_resnet_v2_model_for_this_input_shape(weights=file_weights, input_shape=input_shape,
     #                                                              backend=keras.backend, layers=keras.layers,
     #                                                              models=keras.models,
     #                                                              utils=keras.utils)
     # model.load_weights(file_weights)
 
+    # Finalize model initialization
+    model.compile(optimizer='Adam', loss='binary_crossentropy',
+                  metrics=['acc', 'MeanSquaredError', 'AUC', 'Precision', 'Recall'])
+
     # Log metrics with wandb
-    X_train = X
-    y_train = X
-    X_test = X
-    y_test = X
-    config = {'epochs': 100}
-    model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=config['epochs'], callbacks=[WandbCallback()])
+    model.fit(X_train, y_train, validation_data=(X_val, y_val),
+              batch_size=64, epochs=20, callbacks=[WandbCallback()])
+
+    # Evaluate model
+    scores = model.evaluate(X_test, y_test, verbose=2)
+    print("%s: %.2f%%" % (model.metrics_names[1], scores[1] * 100))
 
     # Save model to wandb
-    model.save(os.path.join(wandb.run.dir, "model.h5"))
+    model.save(os.path.join(wandb.run.dir, 'stage1-60A.h5'))
 
 
 def print_feature_summary(X):

@@ -48,11 +48,18 @@ project’s latest results.
 4. Yang J, Anishchenko I, Park H, Peng Z, Ovchinnikov S, Baker D. Improved protein structure prediction using predicted interresidue orientations. Proc Natl Acad Sci U S A. 2020 Jan 21;117(3):1496-1503. doi: 10.1073/pnas.1914677117. Epub 2020 Jan 2. PMID: 31896580; PMCID: PMC6983395
 
 ** Tasks
+:PROPERTIES:
+:ID:       debb9b0c-0853-4593-adc9-540ff743bd53
+:END:
 *** Data Collection
 *** Feature Generation
 *** Network Architecture
 **** DONE [#A] Reproducing training results with the original DNCON2 architecture
 CLOSED: [2020-11-13 Fri 19:01]
-**** DONE [#A] Implementing Resnet-50 architecture in [[file:../scripts/libcnnpredict.py][DNCON2's network architecture file]] using [[https://towardsdatascience.com/understand-and-implement-resnet-50-with-tensorflow-2-0-1190b9b52691][a blog post.]]
+**** DONE [#A] Implementing Resnet-50 architecture in [[file:../scripts/libcnnpredict.py][DNCON2's network architecture file]] using [[https://towardsdatascience.com/understand-and-implement-resnet-50-with-tensorflow-2-0-1190b9b52691][a blog post]]
 CLOSED: [2020-11-13 Fri 19:33]
-**** TODO [#A] Implementing the Inception-ResNet V2 architecture in [[file:../scripts/libcnnpredict.py][DNCON2's network architecture file]] using [[https://github.com/keras-team/keras-applications/blob/master/keras_applications/inception_resnet_v2.py][the Keras team's own implementation]].
+**** NEXT [#A] Training Resnet-50 architecture
+**** TODO [#A] Implementing the Inception-ResNet V2 architecture in [[file:../scripts/libcnnpredict.py][DNCON2's network architecture file]] using [[https://github.com/keras-team/keras-applications/blob/master/keras_applications/inception_resnet_v2.py][the Keras team's own implementation]]
+:PROPERTIES:
+:ID:       b25d6db2-8db4-4400-bfb9-953b29626069
+:END:

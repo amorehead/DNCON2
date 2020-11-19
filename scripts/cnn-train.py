@@ -5,6 +5,7 @@
 
 from libcnntrain import *
 
+
 dir_config = sys.argv[1]
 file_weights = sys.argv[2]
 string_header = sys.argv[3]
@@ -38,9 +39,6 @@ with open(fileX) as f:
 
 L_EXT = 10
 LMAX = L + L_EXT
-x = getX(fileX, LMAX)
-F = len(x[0, 0, :])
-X = np.zeros((1, LMAX, LMAX, F))
-X[0, :, :, :] = x
+num_of_inputs_to_use = 50
 
-train_model(model_arch, file_weights, X, LMAX)
+train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use)
