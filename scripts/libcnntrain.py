@@ -648,21 +648,21 @@ def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
 
     # Determine if the data set has already been cached
     data_set_already_compiled = \
-        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/y_train.npy') and \
-        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/y_val.npy') and \
-        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/y_test.npy') and \
-        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/y_train.npy') and \
-        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/y_val.npy') and \
-        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/y_test.npy')
+        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/X_train.npy') and \
+        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/X_val.npy') and \
+        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/X_test.npy') and \
+        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_train.npy') and \
+        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_val.npy') and \
+        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_test.npy')
 
     # Load cached data set into memory (if applicable)
     if data_set_already_compiled:
-        X_train = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/y_train.npy')
-        X_val = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/y_val.npy')
-        X_test = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/y_test.npy')
-        y_train = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/y_train.npy')
-        y_val = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/y_val.npy')
-        y_test = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/y_test.npy')
+        X_train = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/X_train.npy')
+        X_val = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/X_val.npy')
+        X_test = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/X_test.npy')
+        y_train = np.load(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_train.npy')
+        y_val = np.load(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_val.npy')
+        y_test = np.load(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_test.npy')
 
     # Extracting features and labels from .txt file data set
     if not data_set_already_compiled:
@@ -686,9 +686,9 @@ def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
         np.save(base_cached_data_dir + '/databases/DNCON2/cached_features/X_train', X_train)
         np.save(base_cached_data_dir + '/databases/DNCON2/cached_features/X_val', X_val)
         np.save(base_cached_data_dir + '/databases/DNCON2/cached_features/X_test', X_test)
-        np.save(base_cached_data_dir + '/databases/DNCON2/cached_features/y_train', y_train)
-        np.save(base_cached_data_dir + '/databases/DNCON2/cached_features/y_val', y_val)
-        np.save(base_cached_data_dir + '/databases/DNCON2/cached_features/y_test', y_test)
+        np.save(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_train', y_train)
+        np.save(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_val', y_val)
+        np.save(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_test', y_test)
 
     # Build model architecture
     input_shape = X_train[0].shape
