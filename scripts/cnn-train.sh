@@ -3,11 +3,11 @@
 #SBATCH -p Lewis
 #SBATCH -J cnn-train
 #SBATCH -t 0-02:00
-#SBATCH -p gpu4
+#SBATCH --partition Gpu
 #SBATCH --gres gpu:1
-#SBATCH --mem 16
-#SBATCH -N 1
-#SBATCH -n 4
+#SBATCH --ntasks-per-node 4
+#SBATCH --mem 16G
+#SBATCH --nodes 1
 ###############################################################
 
 # Local project path #
