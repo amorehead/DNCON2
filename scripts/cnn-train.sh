@@ -3,7 +3,7 @@
 #SBATCH -p Lewis
 #SBATCH -J cnn-train
 #SBATCH -t 0-02:00
-#SBATCH -p gpu3
+#SBATCH -p gpu4
 #SBATCH --gres gpu:1
 #SBATCH --mem 16
 #SBATCH -N 1
@@ -11,12 +11,13 @@
 ###############################################################
 
 # Local project path #
-export MYLOCAL=/home/$USER/Repositories/lab_repos/DNCON2
+# export my_local=/home/"$USER"/Repositories/lab_repos/DNCON2
 
 # Remote project path #
-# export MYLOCAL=/home/$USER/data/DNCON2
+export my_local=/home/"$USER"/data/DNCON2
 
 module load miniconda3
-source $MYLOCAL/venv/bin/activate
+# source /home/alexm/Repositories/lab_repos/DNCON2/venv/bin/activate
+source /home/acmwhb/data/DNCON2/venv/bin/activate
 
-python $MYLOCAL/scripts/cnn-train.sh
+python3 "$my_local"/scripts/cnn-train.sh
