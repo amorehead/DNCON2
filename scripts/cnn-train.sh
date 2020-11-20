@@ -11,10 +11,10 @@
 ###############################################################
 
 # Local project path #
-#export MYLOCAL=/home/$USER/Repositories/lab_repos/DNCON2
+export MYLOCAL=/home/$USER/Repositories/lab_repos/DNCON2
 
 # Remote project path #
-export MYLOCAL=/home/$USER/data/DNCON2
+# export MYLOCAL=/home/$USER/data/DNCON2
 
 module load miniconda3
 source $MYLOCAL/venv/bin/activate
