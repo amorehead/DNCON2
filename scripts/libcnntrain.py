@@ -694,11 +694,11 @@ def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
     input_shape = X_train[0].shape
 
     # Original DNCON2 architecture #
-    model = build_orig_model_for_this_input_shape(model_arch, input_shape=input_shape)
+    # model = build_orig_model_for_this_input_shape(model_arch, input_shape=input_shape)
 
     # Baseline Resnet architecture #
-    # model = build_resnet_model_for_this_input_shape(input_shape=input_shape,
-    #                                                 num_of_classes=LMAX ** 2)
+    model = build_resnet_model_for_this_input_shape(input_shape=input_shape,
+                                                    num_of_classes=LMAX ** 2)
 
     # Inception-Resnet-V2 architecture #
     # model = build_inception_resnet_v2_model_for_this_input_shape(weights=file_weights, input_shape=input_shape,
