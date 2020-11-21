@@ -706,7 +706,13 @@ def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
     #                                                              backend=keras.backend, layers=keras.layers,
     #                                                              models=keras.models,
     #                                                              utils=keras.utils)
-    # model.load_weights(file_weights)
+
+    # restore the model file "model.h5" from a specific run by user "lavanyashukla"
+    # in project "save_and_restore" from run "10pr4joa"
+    best_model = wandb.restore('model-best.h5', run_path="amorehead/dncon2/1zsthi0f")
+
+    # use the "name" attribute of the returned object if your framework expects a filename, e.g. as in Keras
+    model.load_weights(best_model.name)
 
     # Finalize model initialization
     model.compile(optimizer='Adam', loss='binary_crossentropy',
@@ -721,7 +727,7 @@ def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
     print("%s: %.2f%%" % (model.metrics_names[1], scores[1] * 100))
 
     # Save model to wandb
-    model.save(os.path.join(wandb.run.dir, 'stage1-60A.h5'))
+    model.save(os.path.join(wandb.run.dir, 'model-best.h5'))
 
 
 def print_feature_summary(X):
