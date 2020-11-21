@@ -695,11 +695,11 @@ def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
     input_shape = X_train[0].shape
 
     # Original DNCON2 architecture #
-    # model = build_orig_model_for_this_input_shape(model_arch, input_shape=input_shape)
+    model = build_orig_model_for_this_input_shape(model_arch, input_shape=input_shape)
 
     # Baseline Resnet architecture #
-    model = build_resnet_model_for_this_input_shape(input_shape=input_shape,
-                                                    num_of_classes=LMAX ** 2)
+    # model = build_resnet_model_for_this_input_shape(input_shape=input_shape,
+    #                                                 num_of_classes=LMAX ** 2)
 
     # Inception-Resnet-V2 architecture #
     # model = build_inception_resnet_v2_model_for_this_input_shape(weights=file_weights, input_shape=input_shape,
@@ -714,7 +714,7 @@ def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
 
     # Log metrics with wandb
     model.fit(X_train, y_train, validation_data=(X_val, y_val),
-              batch_size=64, epochs=20, callbacks=[WandbCallback()])
+              batch_size=128, epochs=500, callbacks=[WandbCallback()])
 
     # Evaluate model
     scores = model.evaluate(X_test, y_test, verbose=2)
