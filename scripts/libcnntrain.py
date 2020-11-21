@@ -639,34 +639,35 @@ def extract_contact(file_distance):
 def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
     generated_features = []
     generated_contacts = []
-    base_cached_data_dir = os.getcwd()
+    current_working_dir = os.getcwd()
     X_train, X_val, X_test, y_train, y_val, y_test = \
         np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
 
     # Manually modify base_cached_data_dir if running script from the scripts directory
-    base_cached_data_dir = base_cached_data_dir[:-8] if base_cached_data_dir[-7:] == 'scripts' else base_cached_data_dir
+    current_working_dir = current_working_dir[:-8] if current_working_dir[-7:] == 'scripts' else current_working_dir
 
     # Determine if the data set has already been cached
     data_set_already_compiled = \
-        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/X_train.npy') and \
-        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/X_val.npy') and \
-        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_features/X_test.npy') and \
-        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_train.npy') and \
-        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_val.npy') and \
-        os.path.exists(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_test.npy')
+        os.path.exists(current_working_dir + '/databases/DNCON2/cached_features/X_train.npy') and \
+        os.path.exists(current_working_dir + '/databases/DNCON2/cached_features/X_val.npy') and \
+        os.path.exists(current_working_dir + '/databases/DNCON2/cached_features/X_test.npy') and \
+        os.path.exists(current_working_dir + '/databases/DNCON2/cached_labels/y_train.npy') and \
+        os.path.exists(current_working_dir + '/databases/DNCON2/cached_labels/y_val.npy') and \
+        os.path.exists(current_working_dir + '/databases/DNCON2/cached_labels/y_test.npy')
 
     # Load cached data set into memory (if applicable)
     if data_set_already_compiled:
-        X_train = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/X_train.npy')
-        X_val = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/X_val.npy')
-        X_test = np.load(base_cached_data_dir + '/databases/DNCON2/cached_features/X_test.npy')
-        y_train = np.load(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_train.npy')
-        y_val = np.load(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_val.npy')
-        y_test = np.load(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_test.npy')
+        X_train = np.load(current_working_dir + '/databases/DNCON2/cached_features/X_train.npy')
+        X_val = np.load(current_working_dir + '/databases/DNCON2/cached_features/X_val.npy')
+        X_test = np.load(current_working_dir + '/databases/DNCON2/cached_features/X_test.npy')
+        y_train = np.load(current_working_dir + '/databases/DNCON2/cached_labels/y_train.npy')
+        y_val = np.load(current_working_dir + '/databases/DNCON2/cached_labels/y_val.npy')
+        y_test = np.load(current_working_dir + '/databases/DNCON2/cached_labels/y_test.npy')
 
     # Extracting features and labels from .txt file data set
     if not data_set_already_compiled:
-        feature_files, contact_files = prepare_data('../databases/DNCON2/features', '../databases/DNCON2/labels')
+        feature_files, contact_files = prepare_data(current_working_dir + '/databases/DNCON2/features',
+                                                    current_working_dir + '/databases/DNCON2/labels')
         for i in range(num_of_inputs_to_use):
             generated_features.append(extract_features(feature_files[i])[0, :, :, :])
             generated_contacts.append(extract_contact(contact_files[i]))
@@ -683,12 +684,12 @@ def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
 
     # Cache training-validation-testing data partitions
     if not data_set_already_compiled:
-        np.save(base_cached_data_dir + '/databases/DNCON2/cached_features/X_train', X_train)
-        np.save(base_cached_data_dir + '/databases/DNCON2/cached_features/X_val', X_val)
-        np.save(base_cached_data_dir + '/databases/DNCON2/cached_features/X_test', X_test)
-        np.save(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_train', y_train)
-        np.save(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_val', y_val)
-        np.save(base_cached_data_dir + '/databases/DNCON2/cached_labels/y_test', y_test)
+        np.save(current_working_dir + '/databases/DNCON2/cached_features/X_train', X_train)
+        np.save(current_working_dir + '/databases/DNCON2/cached_features/X_val', X_val)
+        np.save(current_working_dir + '/databases/DNCON2/cached_features/X_test', X_test)
+        np.save(current_working_dir + '/databases/DNCON2/cached_labels/y_train', y_train)
+        np.save(current_working_dir + '/databases/DNCON2/cached_labels/y_val', y_val)
+        np.save(current_working_dir + '/databases/DNCON2/cached_labels/y_test', y_test)
 
     # Build model architecture
     input_shape = X_train[0].shape
