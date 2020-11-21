@@ -3,8 +3,8 @@
 #SBATCH -p Lewis
 #SBATCH -J cnn-train
 #SBATCH -t 0-02:00
-#SBATCH --partition Gpu
-#SBATCH --gres gpu:4
+#SBATCH --partition gpu3
+#SBATCH --gres gpu:1
 #SBATCH --ntasks-per-node 4
 #SBATCH --mem 128G
 #SBATCH --nodes 1
