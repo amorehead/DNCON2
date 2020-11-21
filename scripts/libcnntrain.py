@@ -639,6 +639,7 @@ def extract_contact(file_distance):
 def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
     generated_features = []
     generated_contacts = []
+    feature_failed_to_generate = False
     current_working_dir = os.getcwd()
     X_train, X_val, X_test, y_train, y_val, y_test = \
         np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
@@ -669,8 +670,19 @@ def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
         feature_files, contact_files = prepare_data(current_working_dir + '/databases/DNCON2/features',
                                                     current_working_dir + '/databases/DNCON2/labels')
         for i in range(num_of_inputs_to_use):
-            generated_features.append(extract_features(feature_files[i])[0, :, :, :])
-            generated_contacts.append(extract_contact(contact_files[i]))
+            try:
+                generated_features.append(extract_features(feature_files[i])[0, :, :, :])
+            except IndexError:
+                feature_failed_to_generate = True
+
+            if not feature_failed_to_generate:
+                try:
+                    generated_contacts.append(extract_contact(contact_files[i]))
+                except IndexError:
+                    # Remove most recently added feature
+                    del generated_features[-1]
+
+            feature_failed_to_generate = False
 
         # Restructure features and labels
         features = np.array(generated_features)
