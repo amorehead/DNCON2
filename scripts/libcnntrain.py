@@ -44,10 +44,10 @@ def read_model_arch(file_config):
             if len(line) < 2:
                 continue
             cols = line.strip().split()
-            if len(cols) != 5:
+            if len(cols) != 7:
                 print('Error! Config file ' + file_config + ' line ' + line + '??')
                 sys.exit(1)
-            lyrs[cols[0]] = cols[1] + ' ' + cols[2] + ' ' + cols[3] + ' ' + cols[4]
+            lyrs[cols[0]] = cols[1] + ' ' + cols[2] + ' ' + cols[3] + ' ' + cols[4] + ' ' + cols[5] + ' ' + cols[6]
     print('')
     print('Read model architecture:')
     for k, v in sorted(lyrs.items()):
@@ -58,7 +58,7 @@ def read_model_arch(file_config):
 
 # Feature file that has 0D, 1D, and 2D features (L is the first feature)
 # Output size (a little >= L) to which all the features will be rolled up to as 2D features
-def getX(feature_file, l_max):
+def getX(feature_file, L_MAX):
     # calculate the length of the protein (the first feature)
     reject_list = []
     reject_list.append("# PSSM")
@@ -119,10 +119,10 @@ def getX(feature_file, l_max):
                 )
                 sys.exit()
     F = len(Data)
-    X = np.zeros((l_max, l_max, F))
+    X = np.zeros((L_MAX, L_MAX, F))
     for i in range(0, F):
         X[0:L, 0:L, i] = Data[i]
-    return X
+    return X, L
 
 
 def res_identity(x, filters):
@@ -317,7 +317,7 @@ def inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
 
 
 def build_orig_model_for_this_input_shape(model_arch, input_shape=None):
-    """Old DNCON2 Architecture"""
+    """Old DNCON2 Architecture with Dropout"""
     layer = 1
     model = keras.Sequential()
     while True:
@@ -328,8 +328,9 @@ def build_orig_model_for_this_input_shape(model_arch, input_shape=None):
         num_kernels = int(cols[0])
         filter_size = int(cols[1])
         b_norm_flag = cols[2]
-        activ_funct = cols[3]
-
+        max_pool_flag = cols[3]
+        activ_funct = cols[4]
+        dropout_rate = float(cols[5])
         if layer == 1:
             model.add(
                 layers.Conv2D(filters=num_kernels,
@@ -344,10 +345,13 @@ def build_orig_model_for_this_input_shape(model_arch, input_shape=None):
                               input_shape=input_shape))
         if b_norm_flag == "1":
             model.add(layers.BatchNormalization())
+        # if max_pool_flag == "1":
+        #     model.add(layers.MaxPool2D())
         model.add(layers.Activation(activ_funct))
+        # if dropout_rate > 0.0:
+        #     model.add(layers.Dropout(dropout_rate))
         layer += 1
     model.add(layers.Flatten())
-
     return model
 
 
@@ -607,26 +611,17 @@ def prepare_data(feature_folder, label_folder):
     return feature_files, contact_files
 
 
-def extract_features(fileX):
-    L = 0
-    with open(fileX, 'r') as f:
-        for line in f:
-            if line.startswith('#'):
-                continue
-            L = line.strip().split()
-            L = int(round(math.exp(float(L[0]))))
-            break
-    LMAX = 500
-    x = getX(fileX, LMAX)
+def extract_features(fileX, L_MAX):
+    x, seq_len = getX(fileX, L_MAX)
     F = len(x[0, 0, :])
-    X_data = np.zeros((1, LMAX, LMAX, F))
+    X_data = np.zeros((1, L_MAX, L_MAX, F))
     X_data[0, :, :, :] = x
     return X_data
 
 
-def extract_contact(file_distance):
+def extract_contact(file_distance, L_MAX):
     distance = np.loadtxt(file_distance)
-    contact = np.zeros((500, 500), dtype=int)
+    contact = np.zeros((L_MAX, L_MAX), dtype=int)
     for i in range(distance.shape[0]):
         if distance[i, 2] > 8:
             contact[int(distance[i, 0]), int(distance[i, 1])] = 0
@@ -636,7 +631,8 @@ def extract_contact(file_distance):
     return contact
 
 
-def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
+def train_model(model_arch, file_weights, L_MAX, num_of_inputs_to_use):
+    seq_len = 0
     generated_features = []
     generated_contacts = []
     feature_failed_to_generate = False
@@ -671,13 +667,15 @@ def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
                                                     current_working_dir + '/databases/DNCON2/labels')
         for i in range(num_of_inputs_to_use):
             try:
-                generated_features.append(extract_features(feature_files[i])[0, :, :, :])
+                extracted_feature = extract_features(feature_files[i], L_MAX)
+                generated_features.append(extracted_feature[0, :, :, :])
             except IndexError:
                 feature_failed_to_generate = True
 
             if not feature_failed_to_generate:
                 try:
-                    generated_contacts.append(extract_contact(contact_files[i]))
+                    extracted_contact = extract_contact(contact_files[i], L_MAX)
+                    generated_contacts.append(extracted_contact)
                 except IndexError:
                     # Remove most recently added feature
                     del generated_features[-1]
@@ -693,6 +691,13 @@ def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
         X_train, X_val, y_train, y_val = train_test_split(
             X_train, y_train, test_size=0.25, random_state=1  # 0.25 x 0.8 = 0.2
         )
+
+        X_train = np.asarray(X_train).astype(np.float32)
+        X_val = np.asarray(X_val).astype(np.float32)
+        X_test = np.asarray(X_test).astype(np.float32)
+        y_train = np.asarray(y_train).astype(np.float32)
+        y_val = np.asarray(y_val).astype(np.float32)
+        y_test = np.asarray(y_test).astype(np.float32)
 
     # Cache training-validation-testing data partitions
     if not data_set_already_compiled:
@@ -711,7 +716,7 @@ def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
 
     # Baseline Resnet architecture #
     # model = build_resnet_model_for_this_input_shape(input_shape=input_shape,
-    #                                                 num_of_classes=LMAX ** 2)
+    #                                                 num_of_classes=2)
 
     # Inception-Resnet-V2 architecture #
     # model = build_inception_resnet_v2_model_for_this_input_shape(weights=file_weights, input_shape=input_shape,
@@ -721,10 +726,10 @@ def train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use):
 
     # restore the model file "model.h5" from a specific run by user "lavanyashukla"
     # in project "save_and_restore" from run "10pr4joa"
-    best_model = wandb.restore('model-best.h5', run_path="amorehead/dncon2/1zsthi0f")
+    # best_model = wandb.restore('model-best.h5', run_path="amorehead/dncon2/1zsthi0f")
 
     # use the "name" attribute of the returned object if your framework expects a filename, e.g. as in Keras
-    model.load_weights(best_model.name)
+    # model.load_weights(best_model.name)
 
     # Finalize model initialization
     model.compile(optimizer='Adam', loss='binary_crossentropy',

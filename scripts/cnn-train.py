@@ -11,6 +11,7 @@ file_weights = sys.argv[2]
 string_header = sys.argv[3]
 fileX = sys.argv[4]
 fileX_stage2 = sys.argv[5]
+L_MAX = int(sys.argv[7])
 
 file_weights = dir_config + '/' + file_weights if file_weights else None
 model_arch = read_model_arch(dir_config + '/model-arch.config')
@@ -24,21 +25,5 @@ print('fileX         : ' + fileX)
 print('fileX_stage2  : ' + fileX_stage2)
 print('')
 
-# Need to make X slightly bigger than L x L by padding zeros
-# Building a model with L x L decreases performance
-L = 0
-with open(fileX) as f:
-    for line in f:
-        if line.startswith('#'):
-            continue
-        L = line.strip().split()
-        l_0 = L[0]
-        exp = math.exp(float(L[0]))
-        L = int(round(math.exp(float(L[0]))))
-        break
-
-L_EXT = 10
-LMAX = L + L_EXT
-num_of_inputs_to_use = 200
-
-train_model(model_arch, file_weights, LMAX, num_of_inputs_to_use)
+num_of_inputs_to_use = 10  # 200 maximum in initial training/validation batch
+train_model(model_arch, file_weights, L_MAX, num_of_inputs_to_use)

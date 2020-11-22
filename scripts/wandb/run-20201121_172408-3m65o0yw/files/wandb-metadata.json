@@ -1,0 +1,29 @@
+{
+    "os": "Linux-5.9.8-2-MANJARO-x86_64-with-glibc2.10",
+    "python": "3.8.3",
+    "heartbeatAt": "2020-11-21T23:24:11.427400",
+    "startedAt": "2020-11-21T23:24:08.689635",
+    "docker": null,
+    "cpu_count": 12,
+    "cuda": null,
+    "args": [
+        "../model-config-n-weights",
+        "stage1-60A.hdf5",
+        "60A",
+        "../databases/DNCON2/features/X-1EE6-A.txt",
+        "../test-dncon2/X-1EE6-A.rr",
+        "../test-dncon2/feat-stg2.txt"
+    ],
+    "state": "running",
+    "codePath": "scripts/cnn-train.py",
+    "program": "/home/alexm/Repositories/lab_repos/DNCON2/scripts/cnn-train.py",
+    "git": {
+        "remote": "https://github.com/amorehead/DNCON2.git",
+        "commit": "08a61dba9d9985e2396805e78c0939ff3954befb"
+    },
+    "email": "alex.morehead@gmail.com",
+    "root": "/home/alexm/Repositories/lab_repos/DNCON2",
+    "host": "alex-xps159570",
+    "username": "alexm",
+    "executable": "/home/alexm/Repositories/lab_repos/DNCON2/venv/bin/python3"
+}
