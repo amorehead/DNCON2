@@ -764,7 +764,7 @@ def train_model(model_arch, file_weights, L_MAX, num_of_inputs_to_use):
         # Restructure features and labels
         features = np.array(generated_features)
         contacts = np.reshape(generated_contacts,
-                              (num_of_inputs_to_use, len(generated_contacts) / num_of_inputs_to_use))
+                              (num_of_inputs_to_use, len(generated_contacts) // num_of_inputs_to_use))
 
         # Construct a 60-20-20 (%) training-validation-testing data split
         X_train, X_test, y_train, y_test = train_test_split(features, contacts, test_size=0.2, random_state=1)
