@@ -19,4 +19,4 @@ export my_local=/home/"$USER"/data/DNCON2
 module load miniconda3
 source "$my_local"/venv/bin/activate
 
-python "$my_local"/scripts/cnn-train.py "$my_local"/model-config-n-weights "stage1-60A.hdf5" "60A" "$my_local"/databases/DNCON2/features/X-1EE6-A.txt "$my_local"/test-dncon2/X-1EE6-A.rr "$my_local"/test-dncon2/feat-stg2.txt 500
+python "$my_local"/scripts/cnn-train.py "$my_local"/model-config-n-weights "stage1-60A.hdf5" "60A" "$my_local"/databases/DNCON2/features/X-1EE6-A.txt "$my_local"/test-dncon2/X-1EE6-A.rr "$my_local"/test-dncon2/feat-stg2.txt 500 50

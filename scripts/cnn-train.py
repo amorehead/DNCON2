@@ -12,6 +12,7 @@ string_header = sys.argv[3]
 fileX = sys.argv[4]
 fileX_stage2 = sys.argv[5]
 L_MAX = int(sys.argv[7])
+num_of_inputs_to_use = int(sys.argv[8])  # 200 maximum in initial training/validation batch
 
 file_weights = dir_config + '/' + file_weights if file_weights else None
 model_arch = read_model_arch(dir_config + '/model-arch.config')
@@ -25,5 +26,4 @@ print('fileX         : ' + fileX)
 print('fileX_stage2  : ' + fileX_stage2)
 print('')
 
-num_of_inputs_to_use = 10  # 200 maximum in initial training/validation batch
 train_model(model_arch, file_weights, L_MAX, num_of_inputs_to_use)

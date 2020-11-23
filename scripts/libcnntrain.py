@@ -18,6 +18,8 @@ from tensorflow.keras import layers
 from tensorflow.keras import regularizers
 from wandb.keras import WandbCallback
 
+# region Global Variables
+
 # Init wandb
 wandb.init(project="dncon2")
 
@@ -29,6 +31,67 @@ backend = None
 # layers = None
 models = None
 keras_utils = None
+
+
+# endregion
+
+
+# region Utility Functions
+def print_feature_summary(X):
+    print("FeatID         Avg        Med        Max        Sum        Avg[30]    Med[30]    Max[30]    Sum[30]")
+    for ii in range(0, len(X[0, 0, 0, :])):
+        (m, s, a, d) = (
+            X[0, :, :, ii].flatten().max(),
+            X[0, :, :, ii].flatten().sum(),
+            X[0, :, :, ii].flatten().mean(),
+            np.median(X[0, :, :, ii].flatten()),
+        )
+        (m30, s30, a30, d30) = (
+            X[0, 30, :, ii].flatten().max(),
+            X[0, 30, :, ii].flatten().sum(),
+            X[0, 30, :, ii].flatten().mean(),
+            np.median(X[0, 30, :, ii].flatten()),
+        )
+        print(" Feat%2s %10.4f %10.4f %10.4f %10.1f     %10.4f %10.4f %10.4f %10.4f" % (
+            ii,
+            a,
+            d,
+            m,
+            s,
+            a30,
+            d30,
+            m30,
+            s30,
+        ))
+
+
+def get_x_from_this_file(feature_file):
+    L = 0
+    with open(feature_file) as f:
+        for line in f:
+            if line.startswith("#"):
+                continue
+            L = line.strip().split()
+            L = int(round(math.exp(float(L[0]))))
+            break
+    x = getX(feature_file, L)
+    F = len(x[0, 0, :])
+    X = np.zeros((1, L, L, F))
+    X[0, :, :, :] = x
+    return X
+
+
+def prediction2rr(P, fileRR):
+    print("Writing RR file " + fileRR)
+    L = int(math.sqrt(len(P)))
+    PM = P.reshape(L, L)
+    rr = open(fileRR, "w")
+    for i in range(0, L):
+        for j in range(i, L):
+            if abs(i - j) < 1:
+                continue
+            rr.write("%i %i 0 8 %.5f\n" % (i + 1, j + 1, PM[i][j]))
+    rr.close()
 
 
 # Model architectures / Layers information
@@ -125,41 +188,53 @@ def getX(feature_file, L_MAX):
     return X, L
 
 
-def res_identity(x, filters):
-    """
-    ResNet block where dimensions do not change.
-    The skip connection is just a simple identity connection.
-    We will have 3 blocks, and then input will be added.
-    """
-
-    x_skip = x  # Will be used for addition with the residual block
-    f1, f2 = filters
-
-    # First block
-    x = layers.Conv2D(f1, kernel_size=(1, 1), strides=(1, 1), padding='valid',
-                      kernel_regularizer=regularizers.l2(0.001))(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation(activations.relu)(x)
-
-    # Second block # bottleneck (but size kept same with padding)
-    x = layers.Conv2D(f1, kernel_size=(3, 3), strides=(1, 1), padding='same',
-                      kernel_regularizer=regularizers.l2(0.001))(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation(activations.relu)(x)
-
-    # Third block activation used after adding the input
-    x = layers.Conv2D(f2, kernel_size=(1, 1), strides=(1, 1), padding='valid',
-                      kernel_regularizer=regularizers.l2(0.001))(x)
-    x = layers.BatchNormalization()(x)
-    # x = Activation(activations.relu)(x)
-
-    # Add the input
-    x = layers.Add()([x, x_skip])
-    x = layers.Activation(activations.relu)(x)
-
-    return x
+# endregion
 
 
+# region Original Architecture
+def build_orig_model_for_this_input_shape(model_arch, input_shape=None):
+    """Old DNCON2 Architecture with Dropout"""
+    layer = 1
+    model = keras.Sequential()
+    while True:
+        if not ("layer" + str(layer)) in model_arch:
+            break
+        parameters = model_arch["layer" + str(layer)]
+        cols = parameters.split()
+        num_kernels = int(cols[0])
+        filter_size = int(cols[1])
+        b_norm_flag = cols[2]
+        max_pool_flag = cols[3]  # Disabled for dimension mismatch
+        activ_funct = cols[4]
+        dropout_rate = float(cols[5])  # Disabled for dimension mismatch
+        if layer == 1:
+            model.add(
+                layers.Conv2D(filters=num_kernels,
+                              kernel_size=filter_size,
+                              padding="same",
+                              input_shape=input_shape))
+        else:
+            model.add(
+                layers.Conv2D(filters=num_kernels,
+                              kernel_size=filter_size,
+                              padding="same",
+                              input_shape=input_shape))
+        if b_norm_flag == "1":
+            model.add(layers.BatchNormalization())
+        # if max_pool_flag == "1":
+        #     model.add(layers.MaxPool2D())
+        model.add(layers.Activation(activ_funct))
+        # if dropout_rate > 0.0:
+        #     model.add(layers.Dropout(dropout_rate))
+        layer += 1
+    model.add(layers.Flatten())
+    return model
+
+
+# endregion
+
+
+# region Resnet-50 Architecture
 def res_conv(x, s, filters):
     """Here, the input size changes"""
     x_skip = x
@@ -195,6 +270,92 @@ def res_conv(x, s, filters):
     return x
 
 
+def res_identity(x, filters):
+    """
+    ResNet block where dimensions do not change.
+    The skip connection is just a simple identity connection.
+    We will have 3 blocks, and then input will be added.
+    """
+
+    x_skip = x  # Will be used for addition with the residual block
+    f1, f2 = filters
+
+    # First block
+    x = layers.Conv2D(f1, kernel_size=(1, 1), strides=(1, 1), padding='valid',
+                      kernel_regularizer=regularizers.l2(0.001))(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation(activations.relu)(x)
+
+    # Second block # bottleneck (but size kept same with padding)
+    x = layers.Conv2D(f1, kernel_size=(3, 3), strides=(1, 1), padding='same',
+                      kernel_regularizer=regularizers.l2(0.001))(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation(activations.relu)(x)
+
+    # Third block activation used after adding the input
+    x = layers.Conv2D(f2, kernel_size=(1, 1), strides=(1, 1), padding='valid',
+                      kernel_regularizer=regularizers.l2(0.001))(x)
+    x = layers.BatchNormalization()(x)
+    # x = Activation(activations.relu)(x)
+
+    # Add the input
+    x = layers.Add()([x, x_skip])
+    x = layers.Activation(activations.relu)(x)
+
+    return x
+
+
+def build_resnet_model_for_this_input_shape(input_shape, num_of_classes):
+    input_layer = layers.Input(shape=input_shape)
+    x = layers.ZeroPadding2D(padding=(3, 3))(input_layer)
+
+    # 1st stage
+    # Here, we perform max pooling
+    x = layers.Conv2D(64, kernel_size=(7, 7), strides=(2, 2))(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation(activations.relu)(x)
+    x = layers.MaxPooling2D((3, 3), strides=(2, 2))(x)
+
+    # 2nd stage
+    # From here on, only convolution block and identity blocks, no pooling
+    x = res_conv(x, s=1, filters=(64, 256))
+    x = res_identity(x, filters=(64, 256))
+    x = res_identity(x, filters=(64, 256))
+
+    # 3rd stage
+    x = res_conv(x, s=2, filters=(128, 512))
+    x = res_identity(x, filters=(128, 512))
+    x = res_identity(x, filters=(128, 512))
+    x = res_identity(x, filters=(128, 512))
+
+    # 4th stage
+    x = res_conv(x, s=2, filters=(256, 1024))
+    x = res_identity(x, filters=(256, 1024))
+    x = res_identity(x, filters=(256, 1024))
+    x = res_identity(x, filters=(256, 1024))
+    x = res_identity(x, filters=(256, 1024))
+    x = res_identity(x, filters=(256, 1024))
+
+    # 5th stage
+    x = res_conv(x, s=2, filters=(512, 2048))
+    x = res_identity(x, filters=(512, 2048))
+    x = res_identity(x, filters=(512, 2048))
+
+    # End with average pooling and a dense connection
+    x = layers.AveragePooling2D((2, 2), padding='same')(x)
+    x = layers.Flatten()(x)
+    x = layers.Dense(num_of_classes, activation='softmax', kernel_initializer='he_normal')(x)  # Multi-class
+
+    # Define the model
+    model = keras.models.Model(inputs=input_layer, outputs=x, name='Resnet50')
+
+    return model
+
+
+# endregion
+
+
+# region Inception-Resnet-V2 Architecture
 def conv2d_bn(x,
               filters,
               kernel_size,
@@ -314,92 +475,6 @@ def inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
     if activation is not None:
         x = layers.Activation(activation, name=block_name + '_ac')(x)
     return x
-
-
-def build_orig_model_for_this_input_shape(model_arch, input_shape=None):
-    """Old DNCON2 Architecture with Dropout"""
-    layer = 1
-    model = keras.Sequential()
-    while True:
-        if not ("layer" + str(layer)) in model_arch:
-            break
-        parameters = model_arch["layer" + str(layer)]
-        cols = parameters.split()
-        num_kernels = int(cols[0])
-        filter_size = int(cols[1])
-        b_norm_flag = cols[2]
-        max_pool_flag = cols[3]
-        activ_funct = cols[4]
-        dropout_rate = float(cols[5])
-        if layer == 1:
-            model.add(
-                layers.Conv2D(filters=num_kernels,
-                              kernel_size=filter_size,
-                              padding="same",
-                              input_shape=input_shape))
-        else:
-            model.add(
-                layers.Conv2D(filters=num_kernels,
-                              kernel_size=filter_size,
-                              padding="same",
-                              input_shape=input_shape))
-        if b_norm_flag == "1":
-            model.add(layers.BatchNormalization())
-        # if max_pool_flag == "1":
-        #     model.add(layers.MaxPool2D())
-        model.add(layers.Activation(activ_funct))
-        # if dropout_rate > 0.0:
-        #     model.add(layers.Dropout(dropout_rate))
-        layer += 1
-    model.add(layers.Flatten())
-    return model
-
-
-def build_resnet_model_for_this_input_shape(input_shape, num_of_classes):
-    input_layer = layers.Input(shape=input_shape)
-    x = layers.ZeroPadding2D(padding=(3, 3))(input_layer)
-
-    # 1st stage
-    # Here, we perform max pooling
-    x = layers.Conv2D(64, kernel_size=(7, 7), strides=(2, 2))(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation(activations.relu)(x)
-    x = layers.MaxPooling2D((3, 3), strides=(2, 2))(x)
-
-    # 2nd stage
-    # From here on, only convolution block and identity blocks, no pooling
-    x = res_conv(x, s=1, filters=(64, 256))
-    x = res_identity(x, filters=(64, 256))
-    x = res_identity(x, filters=(64, 256))
-
-    # 3rd stage
-    x = res_conv(x, s=2, filters=(128, 512))
-    x = res_identity(x, filters=(128, 512))
-    x = res_identity(x, filters=(128, 512))
-    x = res_identity(x, filters=(128, 512))
-
-    # 4th stage
-    x = res_conv(x, s=2, filters=(256, 1024))
-    x = res_identity(x, filters=(256, 1024))
-    x = res_identity(x, filters=(256, 1024))
-    x = res_identity(x, filters=(256, 1024))
-    x = res_identity(x, filters=(256, 1024))
-    x = res_identity(x, filters=(256, 1024))
-
-    # 5th stage
-    x = res_conv(x, s=2, filters=(512, 2048))
-    x = res_identity(x, filters=(512, 2048))
-    x = res_identity(x, filters=(512, 2048))
-
-    # End with average pooling and a dense connection
-    x = layers.AveragePooling2D((2, 2), padding='same')(x)
-    x = layers.Flatten()(x)
-    x = layers.Dense(num_of_classes, activation='softmax', kernel_initializer='he_normal')(x)  # Multi-class
-
-    # Define the model
-    model = keras.models.Model(inputs=input_layer, outputs=x, name='Resnet50')
-
-    return model
 
 
 def build_inception_resnet_v2_model_for_this_input_shape(include_top=True,
@@ -594,6 +669,10 @@ def build_inception_resnet_v2_model_for_this_input_shape(include_top=True,
     return model
 
 
+# endregion
+
+
+# region Training Code
 def prepare_data(feature_folder, label_folder):
     import glob
     import os
@@ -746,59 +825,4 @@ def train_model(model_arch, file_weights, L_MAX, num_of_inputs_to_use):
     # Save model to wandb
     model.save(os.path.join(wandb.run.dir, 'model-best.h5'))
 
-
-def print_feature_summary(X):
-    print("FeatID         Avg        Med        Max        Sum        Avg[30]    Med[30]    Max[30]    Sum[30]")
-    for ii in range(0, len(X[0, 0, 0, :])):
-        (m, s, a, d) = (
-            X[0, :, :, ii].flatten().max(),
-            X[0, :, :, ii].flatten().sum(),
-            X[0, :, :, ii].flatten().mean(),
-            np.median(X[0, :, :, ii].flatten()),
-        )
-        (m30, s30, a30, d30) = (
-            X[0, 30, :, ii].flatten().max(),
-            X[0, 30, :, ii].flatten().sum(),
-            X[0, 30, :, ii].flatten().mean(),
-            np.median(X[0, 30, :, ii].flatten()),
-        )
-        print(" Feat%2s %10.4f %10.4f %10.4f %10.1f     %10.4f %10.4f %10.4f %10.4f" % (
-            ii,
-            a,
-            d,
-            m,
-            s,
-            a30,
-            d30,
-            m30,
-            s30,
-        ))
-
-
-def get_x_from_this_file(feature_file):
-    L = 0
-    with open(feature_file) as f:
-        for line in f:
-            if line.startswith("#"):
-                continue
-            L = line.strip().split()
-            L = int(round(math.exp(float(L[0]))))
-            break
-    x = getX(feature_file, L)
-    F = len(x[0, 0, :])
-    X = np.zeros((1, L, L, F))
-    X[0, :, :, :] = x
-    return X
-
-
-def prediction2rr(P, fileRR):
-    print("Writing RR file " + fileRR)
-    L = int(math.sqrt(len(P)))
-    PM = P.reshape(L, L)
-    rr = open(fileRR, "w")
-    for i in range(0, L):
-        for j in range(i, L):
-            if abs(i - j) < 1:
-                continue
-            rr.write("%i %i 0 8 %.5f\n" % (i + 1, j + 1, PM[i][j]))
-    rr.close()
+# endregion
