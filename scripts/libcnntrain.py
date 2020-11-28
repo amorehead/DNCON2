@@ -804,8 +804,8 @@ def train_model(model_arch, file_weights, L_MAX, num_of_inputs_to_use):
     #                                                              models=keras.models,
     #                                                              utils=keras.utils)
 
-    # restore the model file "model.h5" from a specific run by user "lavanyashukla"
-    # in project "save_and_restore" from run "10pr4joa"
+    # restore the model file "model.h5" from a specific run by user "amorehead"
+    # in project "save_and_restore" from run "1zsthi0f"
     # best_model = wandb.restore('model-best.h5', run_path="amorehead/dncon2/1zsthi0f")
 
     # use the "name" attribute of the returned object if your framework expects a filename, e.g. as in Keras
